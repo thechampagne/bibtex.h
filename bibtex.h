@@ -96,6 +96,8 @@ typedef struct bibtex_entry_t
 } bibtex_entry_t;
 
 bibtex_error_t bibtex_parse(bibtex_entry_t** root, const char* input);
+void bibtex_field_free(bibtex_field_t* field);
+void bibtex_entry_free(bibtex_entry_t* entry);
 
 #ifdef BIBTEX_IMPLEMENTATION
 
@@ -506,6 +508,31 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
     }
   *root = head_entry;
   return error;
+}
+
+void bibtex_field_free(bibtex_field_t* field)
+{
+  while(field != NULL)
+    {
+      bibtex_field_t* head = field;
+      free(head->value);
+      free(head);
+      field = head->next;
+    }
+  free(field);
+}
+
+void bibtex_entry_free(bibtex_entry_t* entry)
+{
+  while(entry != NULL)
+    {
+      bibtex_entry_t* head = entry;
+      free(head->key);
+      bibtex_field_free(head->fields);
+      free(head);
+      entry = head->next;
+    }
+  free(entry);
 }
 
 
