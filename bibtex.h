@@ -20,7 +20,9 @@ typedef enum bibtex_error_type_t
   BIBTEX_ERROR_EXPECT_EQ,
   BIBTEX_ERROR_EXPECT_COMMA,
   BIBTEX_ERROR_EXPECT_STRING,
-  BIBTEX_ERROR_EXPECT_NUMBER
+  BIBTEX_ERROR_EXPECT_NUMBER,
+
+  BIBTEX_ERROR_INVALID_ENTRY_TYPE,
 } bibtex_error_type_t;
 
 typedef enum bibtex_entry_type_t
@@ -324,10 +326,23 @@ int bibtex_compare_values(const char* v0, const char* v1)
   return same;
 }
 
-
+// TODO: use hash for checking
 int bibtex_entry_type_check(const char* value)
 {
   if (bibtex_compare_values(value, "article")) return 1;
+  if (bibtex_compare_values(value, "book")) return 1;
+  if (bibtex_compare_values(value, "booklet")) return 1;
+  if (bibtex_compare_values(value, "conference")) return 1;
+  if (bibtex_compare_values(value, "inbook")) return 1;
+  if (bibtex_compare_values(value, "incollection")) return 1;
+  if (bibtex_compare_values(value, "inproceedings")) return 1;
+  if (bibtex_compare_values(value, "manual")) return 1;
+  if (bibtex_compare_values(value, "mastersthesis")) return 1;
+  if (bibtex_compare_values(value, "misc")) return 1;
+  if (bibtex_compare_values(value, "phdthesis")) return 1;
+  if (bibtex_compare_values(value, "proceedings")) return 1;
+  if (bibtex_compare_values(value, "techreport")) return 1;
+  if (bibtex_compare_values(value, "unpublished")) return 1;
   return 0;
 }
 
@@ -390,9 +405,8 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 		  break;
 		}
 	      if (!bibtex_entry_type_check(curr_token.value)) {
-		fprintf(stderr, "Error at %d:%d: unknown entry type '%s'\n",
-		        curr_token.row, curr_token.col, curr_token.value);
-		exit(1);
+		bibtex_error_init(&error, BIBTEX_ERROR_INVALID_ENTRY_TYPE, curr_token.row, curr_token.col);
+		break;
 	      }
 	      if (head_entry == NULL) {
 		head_entry = bibtex_entry_init(BIBTEX_ENTRY_TYPE_ARTICLE, NULL);
