@@ -13,7 +13,7 @@ typedef enum bibtex_error_type_t
   BIBTEX_ERROR_UNEXPECTED_END      = 1 << 1,
   BIBTEX_ERROR_INVALID_TOKEN       = 1 << 2,
 
-  BIBTEX_ERROR_EXPECT_ID           = 1 << 3,
+  BIBTEX_ERROR_EXPECT_ID           = 1 << 3, // TODO: rename it
   BIBTEX_ERROR_EXPECT_AT           = 1 << 4,
   BIBTEX_ERROR_EXPECT_LBRACE       = 1 << 5,
   BIBTEX_ERROR_EXPECT_RBRACE       = 1 << 6,
@@ -99,6 +99,7 @@ typedef struct bibtex_entry_t
 bibtex_error_t bibtex_parse(bibtex_entry_t** root, const char* input);
 void bibtex_field_free(bibtex_field_t* field);
 void bibtex_entry_free(bibtex_entry_t* entry);
+const char* bibtex_strerror(bibtex_error_type_t type);
 
 #ifdef BIBTEX_IMPLEMENTATION
 
@@ -523,11 +524,6 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  prev_token = token;
 	  token = biblexer_next_token(&lex);
 	  bibtex_if_token_error_break(token.type, error, lex.error);
-	  if (token.type == BIBTOKEN_TYPE_EOF)
-	    {
-	      bibtex_error_init(&error, BIBTEX_ERROR_UNEXPECTED_END,token.row, token.col);
-	      goto clean_up;
-	    }
 	  if (token.type != BIBTOKEN_TYPE_EOF && token.type != BIBTOKEN_TYPE_AT)
 	    {
 	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_AT,token.row, token.col);
@@ -596,11 +592,11 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
   return error;
 }
 
-void bibtex_field_free(bibtex_field_t* field)
+void bibtex_field_free(struct bibtex_field_t* field)
 {
   while(field != NULL)
     {
-      bibtex_field_t* head = field;
+      struct bibtex_field_t* head = field;
       free(head->value);
       free(head);
       field = head->next;
@@ -608,17 +604,58 @@ void bibtex_field_free(bibtex_field_t* field)
   free(field);
 }
 
-void bibtex_entry_free(bibtex_entry_t* entry)
+void bibtex_entry_free(struct bibtex_entry_t* entry)
 {
   while(entry != NULL)
     {
-      bibtex_entry_t* head = entry;
+      struct bibtex_entry_t* head = entry;
       free(head->key);
       bibtex_field_free(head->fields);
       free(head);
       entry = head->next;
     }
   free(entry);
+}
+
+const char* bibtex_strerror(enum bibtex_error_type_t type)
+{
+  if(type & (BIBTEX_ERROR_EXPECT_COMMA | BIBTEX_ERROR_EXPECT_RBRACE))
+    return "Expect , or }";
+  else if(type & (BIBTEX_ERROR_EXPECT_ID | BIBTEX_ERROR_EXPECT_RBRACE))
+    return "Expect id or }";
+  switch(type)
+    {
+    case BIBTEX_OK:
+      return "No error";
+    case BIBTEX_ERROR_UNTERMINATED_STRING:
+      return "Unterminated string";
+    case BIBTEX_ERROR_UNEXPECTED_END:
+      return "Unexpected end";
+    case BIBTEX_ERROR_INVALID_TOKEN:
+      return "Invalid token";
+    case BIBTEX_ERROR_EXPECT_ID:
+      return "Expect id";
+    case BIBTEX_ERROR_EXPECT_AT:
+      return "Expect @";
+    case BIBTEX_ERROR_EXPECT_LBRACE:
+      return "Expect {";
+    case BIBTEX_ERROR_EXPECT_RBRACE:
+      return "Expect }";
+    case BIBTEX_ERROR_EXPECT_EQ:
+      return "Expect =";
+    case BIBTEX_ERROR_EXPECT_COMMA:
+      return "Expect ,";
+    case BIBTEX_ERROR_EXPECT_STRING:
+      return "Expect string";
+    case BIBTEX_ERROR_EXPECT_NUMBER:
+      return "Expect number";
+    case BIBTEX_ERROR_INVALID_ENTRY_TYPE:
+      return "Invalid entry type";
+    case BIBTEX_ERROR_INVALID_FIELD_TYPE:
+      return "Invalid field type";
+    default:
+      return "Unknown error";
+    }
 }
 
 
