@@ -23,6 +23,7 @@ typedef enum bibtex_error_type_t
   BIBTEX_ERROR_EXPECT_NUMBER,
 
   BIBTEX_ERROR_INVALID_ENTRY_TYPE,
+  BIBTEX_ERROR_INVALID_FIELD_TYPE,
 } bibtex_error_type_t;
 
 typedef enum bibtex_entry_type_t
@@ -340,6 +341,36 @@ static int bibtex_entry_type_check(const char* value)
   return 0;
 }
 
+static int bibtex_field_type_check(const char* value)
+{
+  if (bibtex_compare_values(value, "address")) return 1;
+  if (bibtex_compare_values(value, "annote")) return 1;
+  if (bibtex_compare_values(value, "author")) return 1;
+  if (bibtex_compare_values(value, "booktitle")) return 1;
+  if (bibtex_compare_values(value, "chapter")) return 1;
+  if (bibtex_compare_values(value, "doi")) return 1;
+  if (bibtex_compare_values(value, "edition")) return 1;
+  if (bibtex_compare_values(value, "editor")) return 1;
+  if (bibtex_compare_values(value, "howpublished")) return 1;
+  if (bibtex_compare_values(value, "institution")) return 1;
+  if (bibtex_compare_values(value, "issn")) return 1;
+  if (bibtex_compare_values(value, "isbn")) return 1;
+  if (bibtex_compare_values(value, "journal")) return 1;
+  if (bibtex_compare_values(value, "month")) return 1;
+  if (bibtex_compare_values(value, "note")) return 1;
+  if (bibtex_compare_values(value, "number")) return 1;
+  if (bibtex_compare_values(value, "organization")) return 1;
+  if (bibtex_compare_values(value, "pages")) return 1;
+  if (bibtex_compare_values(value, "publisher")) return 1;
+  if (bibtex_compare_values(value, "school")) return 1;
+  if (bibtex_compare_values(value, "type")) return 1;
+  if (bibtex_compare_values(value, "series")) return 1;
+  if (bibtex_compare_values(value, "title")) return 1;
+  if (bibtex_compare_values(value, "url")) return 1;
+  if (bibtex_compare_values(value, "volume")) return 1;
+  if (bibtex_compare_values(value, "year")) return 1;
+  return 0;
+}
 
 static enum bibtex_error_type_t bibtoken_to_error(enum bibtoken_type_t token)
 {
@@ -422,6 +453,10 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 		  bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_EQ,token.row, token.col);
 		  break;
 		}
+	      if (!bibtex_field_type_check(curr_token.value)) {
+		bibtex_error_init(&error, BIBTEX_ERROR_INVALID_FIELD_TYPE, curr_token.row, curr_token.col);
+		break;
+	      }
 	      if (head_field == NULL) {
 		head_field = bibtex_field_init(BIBTEX_FIELD_TYPE_ANNOTE, NULL);
 		field = head_field;
