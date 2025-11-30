@@ -8,21 +8,22 @@
 
 typedef enum bibtex_error_type_t
 {
-  BIBTEX_OK,
-  BIBTEX_ERROR_UNTERMINATED_STRING,
-  BIBTEX_ERROR_INVALID_TOKEN,
+  BIBTEX_OK                        = 0,
+  BIBTEX_ERROR_UNTERMINATED_STRING = 1,
+  BIBTEX_ERROR_UNEXPECTED_END      = 1 << 1,
+  BIBTEX_ERROR_INVALID_TOKEN       = 1 << 2,
 
-  BIBTEX_ERROR_EXPECT_ID,
-  BIBTEX_ERROR_EXPECT_AT,
-  BIBTEX_ERROR_EXPECT_LBRACE,
-  BIBTEX_ERROR_EXPECT_RBRACE,
-  BIBTEX_ERROR_EXPECT_EQ,
-  BIBTEX_ERROR_EXPECT_COMMA,
-  BIBTEX_ERROR_EXPECT_STRING,
-  BIBTEX_ERROR_EXPECT_NUMBER,
+  BIBTEX_ERROR_EXPECT_ID           = 1 << 3,
+  BIBTEX_ERROR_EXPECT_AT           = 1 << 4,
+  BIBTEX_ERROR_EXPECT_LBRACE       = 1 << 5,
+  BIBTEX_ERROR_EXPECT_RBRACE       = 1 << 6,
+  BIBTEX_ERROR_EXPECT_EQ           = 1 << 7,
+  BIBTEX_ERROR_EXPECT_COMMA        = 1 << 8,
+  BIBTEX_ERROR_EXPECT_STRING       = 1 << 9,
+  BIBTEX_ERROR_EXPECT_NUMBER       = 1 << 10,
 
-  BIBTEX_ERROR_INVALID_ENTRY_TYPE,
-  BIBTEX_ERROR_INVALID_FIELD_TYPE,
+  BIBTEX_ERROR_INVALID_ENTRY_TYPE  = 1 << 11,
+  BIBTEX_ERROR_INVALID_FIELD_TYPE  = 1 << 12,
 } bibtex_error_type_t;
 
 typedef enum bibtex_entry_type_t
@@ -409,6 +410,11 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  prev_token = token;
 	  token = biblexer_next_token(&lex);
 	  bibtex_if_token_error_break(token.type, error, lex.error);
+	  if (token.type == BIBTOKEN_TYPE_EOF)
+	    {
+	      bibtex_error_init(&error, BIBTEX_ERROR_UNEXPECTED_END,token.row, token.col);
+	      goto clean_up;
+	    }
 	  if (token.type != BIBTOKEN_TYPE_ID)
 	    {
 	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_ID,token.row, token.col);
@@ -419,6 +425,11 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  struct bibtoken_t curr_token = token;
 	  token = biblexer_next_token(&lex);
 	  bibtex_if_token_error_break(token.type, error, lex.error);
+	  if (token.type == BIBTOKEN_TYPE_EOF)
+	    {
+	      bibtex_error_init(&error, BIBTEX_ERROR_UNEXPECTED_END,token.row, token.col);
+	      goto clean_up;
+	    }
 	  if (prev_token.type == BIBTOKEN_TYPE_AT)
 	    {
 	      if (!bibtex_entry_type_check(curr_token.value)) {
@@ -471,7 +482,7 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	    }
 	  else
 	    {
-	      
+       
 	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_AT, curr_token.row, curr_token.col);
 	      free(curr_token.value);
 	      goto clean_up;
@@ -482,9 +493,13 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  prev_token = token;
 	  token = biblexer_next_token(&lex);
 	  bibtex_if_token_error_break(token.type, error, lex.error);
+	  if (token.type == BIBTOKEN_TYPE_EOF)
+	    {
+	      bibtex_error_init(&error, BIBTEX_ERROR_UNEXPECTED_END,token.row, token.col);
+	      goto clean_up;
+	    }
 	  if (token.type != BIBTOKEN_TYPE_STRING && token.type != BIBTOKEN_TYPE_NUMBER)
 	    {
-	     
 	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_ID,token.row, token.col);
 	      goto clean_up;
 	    }
@@ -493,6 +508,11 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  prev_token = token;
 	  token = biblexer_next_token(&lex);
 	  bibtex_if_token_error_break(token.type, error, lex.error);
+	  if (token.type == BIBTOKEN_TYPE_EOF)
+	    {
+	      bibtex_error_init(&error, BIBTEX_ERROR_UNEXPECTED_END,token.row, token.col);
+	      goto clean_up;
+	    }
 	  if (token.type != BIBTOKEN_TYPE_ID)
 	    {
 	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_ID,token.row, token.col);
@@ -503,9 +523,13 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  prev_token = token;
 	  token = biblexer_next_token(&lex);
 	  bibtex_if_token_error_break(token.type, error, lex.error);
+	  if (token.type == BIBTOKEN_TYPE_EOF)
+	    {
+	      bibtex_error_init(&error, BIBTEX_ERROR_UNEXPECTED_END,token.row, token.col);
+	      goto clean_up;
+	    }
 	  if (token.type != BIBTOKEN_TYPE_EOF && token.type != BIBTOKEN_TYPE_AT)
 	    {
-	      
 	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_AT,token.row, token.col);
 	      goto clean_up;
 	    }
@@ -514,10 +538,14 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  prev_token = token;
 	  token = biblexer_next_token(&lex);
 	  bibtex_if_token_error_break(token.type, error, lex.error);
+	  if (token.type == BIBTOKEN_TYPE_EOF)
+	    {
+	      bibtex_error_init(&error, BIBTEX_ERROR_UNEXPECTED_END,token.row, token.col);
+	      goto clean_up;
+	    }
 	  if (token.type != BIBTOKEN_TYPE_ID && token.type != BIBTOKEN_TYPE_RBRACE)
 	    {
-	      
-	      bibtex_error_init(&error, bibtoken_to_error(token.type),token.row, token.col);
+	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_ID | BIBTEX_ERROR_EXPECT_RBRACE,token.row, token.col);
 	      goto clean_up;
 	    }
 	  break;
@@ -525,10 +553,14 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  prev_token = token;
 	  token = biblexer_next_token(&lex);
 	  bibtex_if_token_error_break(token.type, error, lex.error);
+	  if (token.type == BIBTOKEN_TYPE_EOF)
+	    {
+	      bibtex_error_init(&error, BIBTEX_ERROR_UNEXPECTED_END,token.row, token.col);
+	      goto clean_up;
+	    }
 	  if (token.type != BIBTOKEN_TYPE_COMMA && token.type != BIBTOKEN_TYPE_RBRACE)
 	    {
-	      
-	      bibtex_error_init(&error, bibtoken_to_error(token.type),token.row, token.col);
+	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_COMMA | BIBTEX_ERROR_EXPECT_RBRACE, token.row, token.col);
 	      goto clean_up;
 	    }
 	  field->value = prev_token.value;
@@ -537,9 +569,14 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  prev_token = token;
 	  token = biblexer_next_token(&lex);
 	  bibtex_if_token_error_break(token.type, error, lex.error);
+	  if (token.type == BIBTOKEN_TYPE_EOF)
+	    {
+	      bibtex_error_init(&error, BIBTEX_ERROR_UNEXPECTED_END,token.row, token.col);
+	      goto clean_up;
+	    }
 	  if (token.type != BIBTOKEN_TYPE_COMMA && token.type != BIBTOKEN_TYPE_RBRACE)
 	    {
-	      bibtex_error_init(&error, bibtoken_to_error(token.type),token.row, token.col);
+	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_COMMA | BIBTEX_ERROR_EXPECT_RBRACE, token.row, token.col);
 	      goto clean_up;
 	    }
 	  field->value = prev_token.value;
