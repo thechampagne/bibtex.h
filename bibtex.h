@@ -234,6 +234,7 @@ struct bibtoken_t biblexer_lex_id(struct biblexer_t* lex)
   return bibtoken_init_value(BIBTOKEN_TYPE_ID, lex->input + start, lex->pos - start, row, col);
 }
 
+// TODO: handle inner strings
 struct bibtoken_t biblexer_lex_string(struct biblexer_t* lex)
 {
   int row = lex->row;
@@ -351,7 +352,7 @@ enum bibtex_error_type_t bibtoken_to_error(enum bibtoken_type_t token)
     }
 }
 
-
+// TODO: support { } values
 struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* input)
 {
   struct biblexer_t lex = biblexer_init(input);
