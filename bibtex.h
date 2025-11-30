@@ -212,9 +212,8 @@ static void biblexer_update_line(struct biblexer_t* lex)
 
 static char biblexer_advance(struct biblexer_t* lex)
 {
-  char c = lex->input[lex->pos++];
   biblexer_update_line(lex);
-  return c;
+  return lex->input[lex->pos++];
 }
 
 static void biblexer_skip_whitespace(struct biblexer_t* lex)
@@ -424,17 +423,17 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  bibtex_if_token_error_break(token.type, error, lex.error);
 	  if (prev_token.type == BIBTOKEN_TYPE_AT)
 	    {
+	      if (!bibtex_entry_type_check(curr_token.value)) {
+		bibtex_error_init(&error, BIBTEX_ERROR_INVALID_ENTRY_TYPE, curr_token.row, curr_token.col);
+		free(curr_token.value);
+		goto clean_up;
+	      }
 	      if (token.type != BIBTOKEN_TYPE_LBRACE)
 		{
 		  bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_LBRACE,token.row, token.col);
 		  free(curr_token.value);
 		  goto clean_up;
 		}
-	      if (!bibtex_entry_type_check(curr_token.value)) {
-		bibtex_error_init(&error, BIBTEX_ERROR_INVALID_ENTRY_TYPE, curr_token.row, curr_token.col);
-		free(curr_token.value);
-		goto clean_up;
-	      }
 	      if (head_entry == NULL) {
 		head_entry = bibtex_entry_init(BIBTEX_ENTRY_TYPE_ARTICLE, NULL);
 		entry = head_entry;
@@ -443,6 +442,7 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 		entry = entry->next;
 	      }
 	      head_field = NULL;
+	      free(curr_token.value);
 	    }
 	  else if (prev_token.type == BIBTOKEN_TYPE_LBRACE)
 	    {
@@ -450,17 +450,17 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	    }
 	  else if (prev_token.type == BIBTOKEN_TYPE_COMMA)
 	    {
+	      if (!bibtex_field_type_check(curr_token.value)) {
+		bibtex_error_init(&error, BIBTEX_ERROR_INVALID_FIELD_TYPE, curr_token.row, curr_token.col);
+		free(curr_token.value);
+	        goto clean_up;
+	      }
 	      if (token.type != BIBTOKEN_TYPE_EQ)
 		{
 		  bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_EQ,token.row, token.col);
 		  free(curr_token.value);
 		  goto clean_up;
 		}
-	      if (!bibtex_field_type_check(curr_token.value)) {
-		bibtex_error_init(&error, BIBTEX_ERROR_INVALID_FIELD_TYPE, curr_token.row, curr_token.col);
-		free(curr_token.value);
-	        goto clean_up;
-	      }
 	      if (head_field == NULL) {
 		head_field = bibtex_field_init(BIBTEX_FIELD_TYPE_ANNOTE, NULL);
 		field = head_field;
@@ -469,6 +469,14 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 		field->next = bibtex_field_init(BIBTEX_FIELD_TYPE_ANNOTE, NULL);
 		field = head_field->next;
 	      }
+	      free(curr_token.value);
+	    }
+	  else
+	    {
+	      
+	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_AT, curr_token.row, curr_token.col);
+	      free(curr_token.value);
+	      goto clean_up;
 	    }
 	  prev_token = curr_token;
 	  break;
