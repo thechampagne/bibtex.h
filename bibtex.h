@@ -101,8 +101,7 @@ bibtex_error_t bibtex_parse(bibtex_entry_t** root, const char* input);
 
 #define bibtex_if_token_error_break(tok, old_err, new_err) old_err = new_err;  if (tok == BIBTOKEN_TYPE_ERROR) break;
 
-
-void bibtex_error_init(struct bibtex_error_t* error, enum bibtex_error_type_t type, int row, int col)
+static void bibtex_error_init(struct bibtex_error_t* error, enum bibtex_error_type_t type, int row, int col)
 {
   error->type = type;
   error->row = row;
@@ -141,7 +140,7 @@ struct bibtoken_t
   int col;
 };
 
-struct bibtex_entry_t* bibtex_entry_init(enum bibtex_entry_type_t type, char* key)
+static struct bibtex_entry_t* bibtex_entry_init(enum bibtex_entry_type_t type, char* key)
 {
   struct bibtex_entry_t* entry = malloc(sizeof(struct bibtex_entry_t));
   entry->type = type;
@@ -151,7 +150,7 @@ struct bibtex_entry_t* bibtex_entry_init(enum bibtex_entry_type_t type, char* ke
   return entry;
 }
 
-struct bibtex_field_t* bibtex_field_init(enum bibtex_field_type_t type, char* value)
+static struct bibtex_field_t* bibtex_field_init(enum bibtex_field_type_t type, char* value)
 {
   struct bibtex_field_t* field = malloc(sizeof(struct bibtex_field_t));
   field->type = type;
@@ -160,12 +159,7 @@ struct bibtex_field_t* bibtex_field_init(enum bibtex_field_type_t type, char* va
   return field;
 }
 
-void bibtex_field_add(struct bibtex_field_t* field,enum bibtex_field_type_t type, char* value)
-{
-  field->next = bibtex_field_init(type, value);
-}
-
-struct bibtoken_t bibtoken_init_value(enum bibtoken_type_t type, const char* start, size_t len, int row, int col)
+static struct bibtoken_t bibtoken_init_value(enum bibtoken_type_t type, const char* start, size_t len, int row, int col)
 {
   struct bibtoken_t token;
   token.type = type;
@@ -177,7 +171,7 @@ struct bibtoken_t bibtoken_init_value(enum bibtoken_type_t type, const char* sta
   return token;
 }
 
-struct bibtoken_t bibtoken_init(enum bibtoken_type_t type, int row, int col)
+static struct bibtoken_t bibtoken_init(enum bibtoken_type_t type, int row, int col)
 {
   struct bibtoken_t token;
   token.type = type;
@@ -187,7 +181,7 @@ struct bibtoken_t bibtoken_init(enum bibtoken_type_t type, int row, int col)
   return token;
 }
 
-struct biblexer_t biblexer_init(const char* input)
+static struct biblexer_t biblexer_init(const char* input)
 {
   struct biblexer_t lex;
   lex.input = input;
@@ -200,12 +194,12 @@ struct biblexer_t biblexer_init(const char* input)
   return lex;
 }
 
-char biblexer_peek(struct biblexer_t* lex)
+static char biblexer_peek(struct biblexer_t* lex)
 {
   return lex->input[lex->pos];
 }
 
-void biblexer_update_line(struct biblexer_t* lex)
+static void biblexer_update_line(struct biblexer_t* lex)
 {
   if (biblexer_peek(lex) == '\n') {
     lex->row++;
@@ -213,21 +207,19 @@ void biblexer_update_line(struct biblexer_t* lex)
   } else lex->col++;
 }
 
-char biblexer_advance(struct biblexer_t* lex)
+static char biblexer_advance(struct biblexer_t* lex)
 {
   char c = lex->input[lex->pos++];
   biblexer_update_line(lex);
   return c;
 }
 
-
-
-void biblexer_skip_whitespace(struct biblexer_t* lex)
+static void biblexer_skip_whitespace(struct biblexer_t* lex)
 {
   while(isspace(biblexer_peek(lex))) biblexer_advance(lex);
 }
 
-struct bibtoken_t biblexer_lex_id(struct biblexer_t* lex)
+static struct bibtoken_t biblexer_lex_id(struct biblexer_t* lex)
 {
   size_t start = lex->pos;
   int row = lex->row;
@@ -237,7 +229,7 @@ struct bibtoken_t biblexer_lex_id(struct biblexer_t* lex)
 }
 
 // TODO: handle inner strings
-struct bibtoken_t biblexer_lex_string(struct biblexer_t* lex)
+static struct bibtoken_t biblexer_lex_string(struct biblexer_t* lex)
 {
   int row = lex->row;
   int col = lex->col;
@@ -253,7 +245,7 @@ struct bibtoken_t biblexer_lex_string(struct biblexer_t* lex)
   return bibtoken_init_value(BIBTOKEN_TYPE_STRING, lex->input + start, len, row, col);
 }
 
-struct bibtoken_t biblexer_lex_number(struct biblexer_t* lex)
+static struct bibtoken_t biblexer_lex_number(struct biblexer_t* lex)
 {
   size_t start = lex->pos;
   int row = lex->row;
@@ -262,7 +254,7 @@ struct bibtoken_t biblexer_lex_number(struct biblexer_t* lex)
   return bibtoken_init_value(BIBTOKEN_TYPE_NUMBER, lex->input + start, lex->pos - start, row, col);
 }
 
-struct bibtoken_t biblexer_next_token(struct biblexer_t* lex)
+static struct bibtoken_t biblexer_next_token(struct biblexer_t* lex)
 {
   biblexer_skip_whitespace(lex);
   char c = biblexer_peek(lex);
@@ -308,7 +300,7 @@ struct bibtoken_t biblexer_next_token(struct biblexer_t* lex)
 }
 
 
-int bibtex_compare_values(const char* v0, const char* v1)
+static int bibtex_compare_values(const char* v0, const char* v1)
 {
   int v0_len = strlen(v0);
   int v1_len = strlen(v1);
@@ -327,7 +319,7 @@ int bibtex_compare_values(const char* v0, const char* v1)
 }
 
 // TODO: use hash for checking
-int bibtex_entry_type_check(const char* value)
+static int bibtex_entry_type_check(const char* value)
 {
   if (bibtex_compare_values(value, "article")) return 1;
   if (bibtex_compare_values(value, "book")) return 1;
@@ -347,7 +339,7 @@ int bibtex_entry_type_check(const char* value)
 }
 
 
-enum bibtex_error_type_t bibtoken_to_error(enum bibtoken_type_t token)
+static enum bibtex_error_type_t bibtoken_to_error(enum bibtoken_type_t token)
 {
   switch (token)
     {
