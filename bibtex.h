@@ -12,7 +12,6 @@ typedef enum bibtex_error_type_t
   BIBTEX_ERROR_UNTERMINATED_STRING,
   BIBTEX_ERROR_INVALID_TOKEN,
 
-  BIBTEX_ERROR_EXPECT_EOF,
   BIBTEX_ERROR_EXPECT_ID,
   BIBTEX_ERROR_EXPECT_AT,
   BIBTEX_ERROR_EXPECT_LBRACE,
@@ -375,7 +374,6 @@ static enum bibtex_error_type_t bibtoken_to_error(enum bibtoken_type_t token)
 {
   switch (token)
     {
-    case BIBTOKEN_TYPE_EOF: return BIBTEX_ERROR_EXPECT_EOF;
     case BIBTOKEN_TYPE_ID: return BIBTEX_ERROR_EXPECT_ID;
     case BIBTOKEN_TYPE_AT: return BIBTEX_ERROR_EXPECT_AT;
     case BIBTOKEN_TYPE_LBRACE: return BIBTEX_ERROR_EXPECT_LBRACE;
@@ -508,7 +506,7 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  if (token.type != BIBTOKEN_TYPE_EOF && token.type != BIBTOKEN_TYPE_AT)
 	    {
 	      
-	      bibtex_error_init(&error, bibtoken_to_error(token.type),token.row, token.col);
+	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_AT,token.row, token.col);
 	      goto clean_up;
 	    }
 	  break;
