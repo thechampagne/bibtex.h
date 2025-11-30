@@ -102,7 +102,7 @@ void bibtex_entry_free(bibtex_entry_t* entry);
 
 #ifdef BIBTEX_IMPLEMENTATION
 
-#define bibtex_if_token_error_break(tok, old_err, new_err) old_err = new_err;  if (tok == BIBTOKEN_TYPE_ERROR) break;
+#define bibtex_if_token_error_break(tok, old_err, new_err) old_err = new_err;  if (tok == BIBTOKEN_TYPE_ERROR) goto clean_up;
 
 static void bibtex_error_init(struct bibtex_error_t* error, enum bibtex_error_type_t type, int row, int col)
 {
@@ -415,7 +415,7 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  if (token.type != BIBTOKEN_TYPE_ID)
 	    {
 	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_ID,token.row, token.col);
-	      break;
+	      goto clean_up;
 	    }
 	  break;
 	case BIBTOKEN_TYPE_ID:
@@ -427,11 +427,13 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	      if (token.type != BIBTOKEN_TYPE_LBRACE)
 		{
 		  bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_LBRACE,token.row, token.col);
-		  break;
+		  free(curr_token.value);
+		  goto clean_up;
 		}
 	      if (!bibtex_entry_type_check(curr_token.value)) {
 		bibtex_error_init(&error, BIBTEX_ERROR_INVALID_ENTRY_TYPE, curr_token.row, curr_token.col);
-		break;
+		free(curr_token.value);
+		goto clean_up;
 	      }
 	      if (head_entry == NULL) {
 		head_entry = bibtex_entry_init(BIBTEX_ENTRY_TYPE_ARTICLE, NULL);
@@ -451,11 +453,13 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	      if (token.type != BIBTOKEN_TYPE_EQ)
 		{
 		  bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_EQ,token.row, token.col);
-		  break;
+		  free(curr_token.value);
+		  goto clean_up;
 		}
 	      if (!bibtex_field_type_check(curr_token.value)) {
 		bibtex_error_init(&error, BIBTEX_ERROR_INVALID_FIELD_TYPE, curr_token.row, curr_token.col);
-		break;
+		free(curr_token.value);
+	        goto clean_up;
 	      }
 	      if (head_field == NULL) {
 		head_field = bibtex_field_init(BIBTEX_FIELD_TYPE_ANNOTE, NULL);
@@ -476,7 +480,7 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	    {
 	     
 	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_ID,token.row, token.col);
-	      break;
+	      goto clean_up;
 	    }
 	  break;
 	case BIBTOKEN_TYPE_LBRACE:
@@ -486,7 +490,7 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  if (token.type != BIBTOKEN_TYPE_ID)
 	    {
 	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_ID,token.row, token.col);
-	      break;
+	      goto clean_up;
 	    }
 	  break;
 	case BIBTOKEN_TYPE_RBRACE:
@@ -497,7 +501,7 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	    {
 	      
 	      bibtex_error_init(&error, bibtoken_to_error(token.type),token.row, token.col);
-	      break;
+	      goto clean_up;
 	    }
 	  break;
 	case BIBTOKEN_TYPE_COMMA:
@@ -508,7 +512,7 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	    {
 	      
 	      bibtex_error_init(&error, bibtoken_to_error(token.type),token.row, token.col);
-	      break;
+	      goto clean_up;
 	    }
 	  break;
 	case BIBTOKEN_TYPE_STRING:
@@ -519,7 +523,7 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	    {
 	      
 	      bibtex_error_init(&error, bibtoken_to_error(token.type),token.row, token.col);
-	      break;
+	      goto clean_up;
 	    }
 	  field->value = prev_token.value;
 	  break;
@@ -530,18 +534,22 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  if (token.type != BIBTOKEN_TYPE_COMMA && token.type != BIBTOKEN_TYPE_RBRACE)
 	    {
 	      bibtex_error_init(&error, bibtoken_to_error(token.type),token.row, token.col);
-	      break;
+	      goto clean_up;
 	    }
 	  field->value = prev_token.value;
-	  break;;
+	  break;
 	case BIBTOKEN_TYPE_INVALID:
 	  bibtex_error_init(&error, BIBTEX_ERROR_INVALID_TOKEN,token.row, token.col);
-	  break;
+	  goto clean_up;
 	case BIBTOKEN_TYPE_EOF: break;
 	case BIBTOKEN_TYPE_ERROR: break;
 	}
     }
   *root = head_entry;
+  return error;
+ clean_up:
+  bibtex_entry_free(entry);
+  *root = NULL;
   return error;
 }
 
