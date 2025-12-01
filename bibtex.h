@@ -498,6 +498,11 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	    }
 	  else if (prev_token.type == BIBTOKEN_TYPE_LBRACE)
 	    {
+	      if (token.type != BIBTOKEN_TYPE_COMMA)
+		{
+		  bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_COMMA,token.row, token.col);
+		  goto clean_up;
+		}
 	      if (head_keys == NULL) {
 	        head_keys = malloc(sizeof(struct bibtex_key_t));
 		keys = head_keys;
@@ -542,7 +547,6 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	    }
 	  else
 	    {
-       
 	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_AT, curr_token.row, curr_token.col);
 	      free(curr_token.value);
 	      goto clean_up;
@@ -715,11 +719,11 @@ const char* bibtex_strerror(enum bibtex_error_type_t type)
     default:
       break;
     }
-  if(type & (BIBTEX_ERROR_EXPECT_COMMA | BIBTEX_ERROR_EXPECT_RBRACE))
+  if((type & (BIBTEX_ERROR_EXPECT_COMMA | BIBTEX_ERROR_EXPECT_RBRACE)) == (BIBTEX_ERROR_EXPECT_COMMA | BIBTEX_ERROR_EXPECT_RBRACE))
     return "Expect , or }";
-  else if(type & (BIBTEX_ERROR_EXPECT_ID | BIBTEX_ERROR_EXPECT_RBRACE))
+  else if((type & (BIBTEX_ERROR_EXPECT_ID | BIBTEX_ERROR_EXPECT_RBRACE)) == (BIBTEX_ERROR_EXPECT_ID | BIBTEX_ERROR_EXPECT_RBRACE))
     return "Expect id or }";
-  else if (type & (BIBTEX_ERROR_EXPECT_STRING | BIBTEX_ERROR_EXPECT_NUMBER))
+  else if ((type & (BIBTEX_ERROR_EXPECT_STRING | BIBTEX_ERROR_EXPECT_NUMBER)) == (BIBTEX_ERROR_EXPECT_STRING | BIBTEX_ERROR_EXPECT_NUMBER))
     return "Expect string or number";
   return "Unknown error";
 }
