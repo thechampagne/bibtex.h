@@ -24,6 +24,7 @@ typedef enum bibtex_error_type_t
 
   BIBTEX_ERROR_INVALID_ENTRY_TYPE  = 1 << 11,
   BIBTEX_ERROR_INVALID_FIELD_TYPE  = 1 << 12,
+  BIBTEX_ERROR_DUPLICATE_CITEKEY   = 1 << 13,
 } bibtex_error_type_t;
 
 typedef enum bibtex_entry_type_t
@@ -393,6 +394,32 @@ static enum bibtex_error_type_t bibtoken_to_error(enum bibtoken_type_t token)
     }
 }
 
+struct bibtex_key_t {
+    char* key;
+    struct bibtex_key_t* next;
+};
+
+
+static int bibtex_key_is_declared(struct bibtex_key_t* keys, char* key)
+{
+  while(keys != NULL)
+    {
+      if (bibtex_compare_values(keys->key, key)) return 1;
+      keys = keys->next;
+    }
+  return 0;
+}
+
+static void bibtex_key_free(struct bibtex_key_t* key)
+{
+  while(key != NULL)
+    {
+      struct bibtex_key_t* head = key;      
+      key = head->next;
+      free(head);
+    }
+}
+
 // TODO: support { } values
 struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* input)
 {
@@ -402,6 +429,8 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
   struct bibtex_entry_t* entry = NULL;
   struct bibtex_field_t* head_field = NULL;
   struct bibtex_field_t* field = NULL;
+  struct bibtex_key_t* head_keys = NULL;
+  struct bibtex_key_t* keys = NULL;
   struct bibtoken_t token = biblexer_next_token(&lex);
   struct bibtoken_t prev_token = token;
   while(token.type != BIBTOKEN_TYPE_EOF && token.type != BIBTOKEN_TYPE_ERROR && error.type == BIBTEX_OK)
@@ -460,6 +489,22 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	    }
 	  else if (prev_token.type == BIBTOKEN_TYPE_LBRACE)
 	    {
+	      if (head_keys == NULL) {
+	        head_keys = malloc(sizeof(struct bibtex_key_t));
+		keys = head_keys;
+		keys->key = curr_token.value;
+	      } else {
+		if (bibtex_key_is_declared(keys, curr_token.value))
+		  {
+		    bibtex_error_init(&error, BIBTEX_ERROR_DUPLICATE_CITEKEY,curr_token.row, curr_token.col);
+		    bibtex_key_free(keys);
+		    free(curr_token.value);
+		    goto clean_up;
+		  }
+		keys->next = malloc(sizeof(struct bibtex_key_t));
+		keys = keys->next;
+		keys->key = curr_token.value;
+	      }
 	      entry->key = curr_token.value;
 	    }
 	  else if (prev_token.type == BIBTOKEN_TYPE_COMMA)
@@ -654,6 +699,8 @@ const char* bibtex_strerror(enum bibtex_error_type_t type)
       return "Invalid entry type";
     case BIBTEX_ERROR_INVALID_FIELD_TYPE:
       return "Invalid field type";
+    case BIBTEX_ERROR_DUPLICATE_CITEKEY:
+      return "Duplicate citekey";
     default:
       break;
     }
