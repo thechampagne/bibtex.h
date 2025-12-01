@@ -647,9 +647,9 @@ void bibtex_field_free(struct bibtex_field_t* field)
   while(field != NULL)
     {
       struct bibtex_field_t* head = field;
-      free(head->value);
-      free(head);
+      free(head->value);      
       field = head->next;
+      free(head);
     }
   free(field);
 }
@@ -661,8 +661,8 @@ void bibtex_entry_free(struct bibtex_entry_t* entry)
       struct bibtex_entry_t* head = entry;
       free(head->key);
       bibtex_field_free(head->fields);
-      free(head);
       entry = head->next;
+      free(head);
     }
   free(entry);
 }
