@@ -26,6 +26,7 @@ typedef enum bibtex_error_type_t
   BIBTEX_ERROR_INVALID_ENTRY_TYPE  = 1 << 12,
   BIBTEX_ERROR_INVALID_FIELD_TYPE  = 1 << 13,
   BIBTEX_ERROR_DUPLICATE_CITEKEY   = 1 << 14,
+  BIBTEX_ERROR_DUPLICATE_FIELD     = 1 << 15,
 } bibtex_error_type_t;
 
 typedef enum bibtex_entry_type_t
@@ -421,6 +422,31 @@ static void bibtex_key_free(struct bibtex_key_t* key)
     }
 }
 
+struct bibtex_field_id_t {
+    enum bibtex_field_type_t type;
+    struct bibtex_field_id_t* next;
+};
+
+static int bibtex_field_is_declared(struct bibtex_field_id_t* fields, enum bibtex_field_type_t field)
+{
+  while(fields != NULL)
+    {
+      if (fields->type == field) return 1;
+      fields = fields->next;
+    }
+  return 0;
+}
+
+static void bibtex_field_id_free(struct bibtex_field_id_t* field)
+{
+  while(field != NULL)
+    {
+      struct bibtex_field_id_t* head = field;
+      field = head->next;
+      free(head);
+    }
+}
+
 // TODO: support { } values
 struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* input)
 {
@@ -432,6 +458,8 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
   struct bibtex_field_t* field = NULL;
   struct bibtex_key_t* head_keys = NULL;
   struct bibtex_key_t* keys = NULL;
+  struct bibtex_field_id_t* head_fields = NULL;
+  struct bibtex_field_id_t* fields = NULL;
   struct bibtoken_t token = biblexer_next_token(&lex);
   struct bibtoken_t prev_token = token;
   if (token.type != BIBTOKEN_TYPE_AT)
@@ -495,6 +523,8 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	      }
 	      head_field = NULL;
 	      free(curr_token.value);
+	      bibtex_field_id_free(head_fields);
+	      head_fields = NULL;
 	    }
 	  else if (prev_token.type == BIBTOKEN_TYPE_LBRACE)
 	    {
@@ -511,7 +541,6 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 		if (bibtex_key_is_declared(keys, curr_token.value))
 		  {
 		    bibtex_error_init(&error, BIBTEX_ERROR_DUPLICATE_CITEKEY,curr_token.row, curr_token.col);
-		    bibtex_key_free(keys);
 		    free(curr_token.value);
 		    goto clean_up;
 		  }
@@ -539,9 +568,21 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 		head_field = bibtex_field_init(field_type, NULL);
 		field = head_field;
 		entry->fields = field;
+		head_fields = malloc(sizeof(struct bibtex_field_id_t));
+		fields = head_fields;
+		fields->type = field_type;
 	      } else {
+		if (bibtex_field_is_declared(fields, field_type))
+		  {
+		    bibtex_error_init(&error, BIBTEX_ERROR_DUPLICATE_FIELD,curr_token.row, curr_token.col);
+		    free(curr_token.value);
+		    goto clean_up;
+		  }
 		field->next = bibtex_field_init(field_type, NULL);
 		field = head_field->next;
+		fields->next = malloc(sizeof(struct bibtex_field_id_t));
+		fields = fields->next;
+	        fields->type = field_type;
 	      }
 	      free(curr_token.value);
 	    }
@@ -650,6 +691,8 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
   *root = head_entry;
   return error;
  clean_up:
+  bibtex_field_id_free(head_fields);
+  bibtex_key_free(head_keys);
   bibtex_entry_free(entry);
   *root = NULL;
   return error;
@@ -716,6 +759,8 @@ const char* bibtex_strerror(enum bibtex_error_type_t type)
       return "Duplicate citekey";
     case BIBTEX_ERROR_EMPTY_INPUT:
       return "Empty input";
+    case BIBTEX_ERROR_DUPLICATE_FIELD:
+      return "Duplicate field";
     default:
       break;
     }
