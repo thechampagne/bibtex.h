@@ -229,7 +229,7 @@ static struct bibtoken_t biblexer_lex_id(struct biblexer_t* lex)
   size_t start = lex->pos;
   int row = lex->row;
   int col = lex->col;
-  while(isalnum(biblexer_peek(lex))) biblexer_advance(lex);
+  while(isalnum(biblexer_peek(lex)) || biblexer_peek(lex) == '-' || biblexer_peek(lex) == '_' || biblexer_peek(lex) == ':') biblexer_advance(lex);
   return bibtoken_init_value(BIBTOKEN_TYPE_ID, lex->input + start, lex->pos - start, row, col);
 }
 
@@ -267,8 +267,8 @@ static struct bibtoken_t biblexer_next_token(struct biblexer_t* lex)
 
   struct bibtoken_t token;
   
-  
-  if (isalpha(c)) {
+
+  if (isalpha(c) || c == '-' || c == '_' || c == ':') {
     token = biblexer_lex_id(lex);
     return token;
   }
@@ -506,7 +506,7 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	    }
 	  if (token.type != BIBTOKEN_TYPE_STRING && token.type != BIBTOKEN_TYPE_NUMBER)
 	    {
-	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_ID,token.row, token.col);
+	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_STRING | BIBTEX_ERROR_EXPECT_NUMBER,token.row, token.col);
 	      goto clean_up;
 	    }
 	  break;
@@ -624,10 +624,6 @@ void bibtex_entry_free(struct bibtex_entry_t* entry)
 
 const char* bibtex_strerror(enum bibtex_error_type_t type)
 {
-  if(type & (BIBTEX_ERROR_EXPECT_COMMA | BIBTEX_ERROR_EXPECT_RBRACE))
-    return "Expect , or }";
-  else if(type & (BIBTEX_ERROR_EXPECT_ID | BIBTEX_ERROR_EXPECT_RBRACE))
-    return "Expect id or }";
   switch(type)
     {
     case BIBTEX_OK:
@@ -659,8 +655,15 @@ const char* bibtex_strerror(enum bibtex_error_type_t type)
     case BIBTEX_ERROR_INVALID_FIELD_TYPE:
       return "Invalid field type";
     default:
-      return "Unknown error";
+      break;
     }
+  if(type & (BIBTEX_ERROR_EXPECT_COMMA | BIBTEX_ERROR_EXPECT_RBRACE))
+    return "Expect , or }";
+  else if(type & (BIBTEX_ERROR_EXPECT_ID | BIBTEX_ERROR_EXPECT_RBRACE))
+    return "Expect id or }";
+  else if (type & (BIBTEX_ERROR_EXPECT_STRING | BIBTEX_ERROR_EXPECT_NUMBER))
+    return "Expect string or number";
+  return "Unknown error";
 }
 
 const char* bibtex_entry_type_to_string(enum bibtex_entry_type_t type)
