@@ -100,6 +100,8 @@ bibtex_error_t bibtex_parse(bibtex_entry_t** root, const char* input);
 void bibtex_field_free(bibtex_field_t* field);
 void bibtex_entry_free(bibtex_entry_t* entry);
 const char* bibtex_strerror(bibtex_error_type_t type);
+const char* bibtex_entry_type_to_string(bibtex_entry_type_t type);
+const char* bibtex_field_type_to_string(bibtex_field_type_t type);
 
 #ifdef BIBTEX_IMPLEMENTATION
 
@@ -322,54 +324,54 @@ static int bibtex_compare_values(const char* v0, const char* v1)
 }
 
 // TODO: use hash for checking
-static int bibtex_entry_type_check(const char* value)
+static enum bibtex_entry_type_t bibtex_entry_type_check(const char* value)
 {
-  if (bibtex_compare_values(value, "article")) return 1;
-  if (bibtex_compare_values(value, "book")) return 1;
-  if (bibtex_compare_values(value, "booklet")) return 1;
-  if (bibtex_compare_values(value, "conference")) return 1;
-  if (bibtex_compare_values(value, "inbook")) return 1;
-  if (bibtex_compare_values(value, "incollection")) return 1;
-  if (bibtex_compare_values(value, "inproceedings")) return 1;
-  if (bibtex_compare_values(value, "manual")) return 1;
-  if (bibtex_compare_values(value, "mastersthesis")) return 1;
-  if (bibtex_compare_values(value, "misc")) return 1;
-  if (bibtex_compare_values(value, "phdthesis")) return 1;
-  if (bibtex_compare_values(value, "proceedings")) return 1;
-  if (bibtex_compare_values(value, "techreport")) return 1;
-  if (bibtex_compare_values(value, "unpublished")) return 1;
-  return 0;
+  if (bibtex_compare_values(value, "article")) return BIBTEX_ENTRY_TYPE_ARTICLE;
+  if (bibtex_compare_values(value, "book")) return BIBTEX_ENTRY_TYPE_BOOK;
+  if (bibtex_compare_values(value, "booklet")) return BIBTEX_ENTRY_TYPE_BOOKLET;
+  if (bibtex_compare_values(value, "conference")) return BIBTEX_ENTRY_TYPE_CONFERENCE;
+  if (bibtex_compare_values(value, "inbook")) return BIBTEX_ENTRY_TYPE_INBOOK;
+  if (bibtex_compare_values(value, "incollection")) return BIBTEX_ENTRY_TYPE_INCOLLECTION;
+  if (bibtex_compare_values(value, "inproceedings")) return BIBTEX_ENTRY_TYPE_INPROCEEDINGS;
+  if (bibtex_compare_values(value, "manual")) return BIBTEX_ENTRY_TYPE_MANUAL;
+  if (bibtex_compare_values(value, "mastersthesis")) return BIBTEX_ENTRY_TYPE_MASTERSTHESIS;
+  if (bibtex_compare_values(value, "misc")) return BIBTEX_ENTRY_TYPE_MISC;
+  if (bibtex_compare_values(value, "phdthesis")) return BIBTEX_ENTRY_TYPE_PHDTHESIS;
+  if (bibtex_compare_values(value, "proceedings")) return BIBTEX_ENTRY_TYPE_PROCEEDINGS;
+  if (bibtex_compare_values(value, "techreport")) return BIBTEX_ENTRY_TYPE_TECHREPORT;
+  if (bibtex_compare_values(value, "unpublished")) return BIBTEX_ENTRY_TYPE_UNPUBLISHED;
+  return -1;
 }
 
-static int bibtex_field_type_check(const char* value)
+static enum bibtex_field_type_t bibtex_field_type_check(const char* value)
 {
-  if (bibtex_compare_values(value, "address")) return 1;
-  if (bibtex_compare_values(value, "annote")) return 1;
-  if (bibtex_compare_values(value, "author")) return 1;
-  if (bibtex_compare_values(value, "booktitle")) return 1;
-  if (bibtex_compare_values(value, "chapter")) return 1;
-  if (bibtex_compare_values(value, "doi")) return 1;
-  if (bibtex_compare_values(value, "edition")) return 1;
-  if (bibtex_compare_values(value, "editor")) return 1;
-  if (bibtex_compare_values(value, "howpublished")) return 1;
-  if (bibtex_compare_values(value, "institution")) return 1;
-  if (bibtex_compare_values(value, "issn")) return 1;
-  if (bibtex_compare_values(value, "isbn")) return 1;
-  if (bibtex_compare_values(value, "journal")) return 1;
-  if (bibtex_compare_values(value, "month")) return 1;
-  if (bibtex_compare_values(value, "note")) return 1;
-  if (bibtex_compare_values(value, "number")) return 1;
-  if (bibtex_compare_values(value, "organization")) return 1;
-  if (bibtex_compare_values(value, "pages")) return 1;
-  if (bibtex_compare_values(value, "publisher")) return 1;
-  if (bibtex_compare_values(value, "school")) return 1;
-  if (bibtex_compare_values(value, "type")) return 1;
-  if (bibtex_compare_values(value, "series")) return 1;
-  if (bibtex_compare_values(value, "title")) return 1;
-  if (bibtex_compare_values(value, "url")) return 1;
-  if (bibtex_compare_values(value, "volume")) return 1;
-  if (bibtex_compare_values(value, "year")) return 1;
-  return 0;
+  if (bibtex_compare_values(value, "address")) return BIBTEX_FIELD_TYPE_ADDRESS;
+  if (bibtex_compare_values(value, "annote")) return BIBTEX_FIELD_TYPE_ANNOTE;
+  if (bibtex_compare_values(value, "author")) return BIBTEX_FIELD_TYPE_AUTHOR;
+  if (bibtex_compare_values(value, "booktitle")) return BIBTEX_FIELD_TYPE_BOOKTITLE;
+  if (bibtex_compare_values(value, "chapter")) return BIBTEX_FIELD_TYPE_CHAPTER;
+  if (bibtex_compare_values(value, "doi")) return BIBTEX_FIELD_TYPE_DOI;
+  if (bibtex_compare_values(value, "edition")) return BIBTEX_FIELD_TYPE_EDITION;
+  if (bibtex_compare_values(value, "editor")) return BIBTEX_FIELD_TYPE_EDITOR;
+  if (bibtex_compare_values(value, "howpublished")) return BIBTEX_FIELD_TYPE_HOWPUBLISHED;
+  if (bibtex_compare_values(value, "institution")) return BIBTEX_FIELD_TYPE_INSTITUTION;
+  if (bibtex_compare_values(value, "issn")) return BIBTEX_FIELD_TYPE_ISSN;
+  if (bibtex_compare_values(value, "isbn")) return BIBTEX_FIELD_TYPE_ISBN;
+  if (bibtex_compare_values(value, "journal")) return BIBTEX_FIELD_TYPE_JOURNAL;
+  if (bibtex_compare_values(value, "month")) return BIBTEX_FIELD_TYPE_MONTH;
+  if (bibtex_compare_values(value, "note")) return BIBTEX_FIELD_TYPE_NOTE;
+  if (bibtex_compare_values(value, "number")) return BIBTEX_FIELD_TYPE_NUMBER;
+  if (bibtex_compare_values(value, "organization")) return BIBTEX_FIELD_TYPE_ORGANIZATION;
+  if (bibtex_compare_values(value, "pages")) return BIBTEX_FIELD_TYPE_PAGES;
+  if (bibtex_compare_values(value, "publisher")) return BIBTEX_FIELD_TYPE_PUBLISHER;
+  if (bibtex_compare_values(value, "school")) return BIBTEX_FIELD_TYPE_SCHOOL;
+  if (bibtex_compare_values(value, "type")) return BIBTEX_FIELD_TYPE_TYPE;
+  if (bibtex_compare_values(value, "series")) return BIBTEX_FIELD_TYPE_SERIES;
+  if (bibtex_compare_values(value, "title")) return BIBTEX_FIELD_TYPE_TITLE;
+  if (bibtex_compare_values(value, "url")) return BIBTEX_FIELD_TYPE_URL;
+  if (bibtex_compare_values(value, "volume")) return BIBTEX_FIELD_TYPE_VOLUME;
+  if (bibtex_compare_values(value, "year")) return BIBTEX_FIELD_TYPE_YEAR;
+  return -1;
 }
 
 static enum bibtex_error_type_t bibtoken_to_error(enum bibtoken_type_t token)
@@ -429,11 +431,13 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  if (token.type == BIBTOKEN_TYPE_EOF)
 	    {
 	      bibtex_error_init(&error, BIBTEX_ERROR_UNEXPECTED_END,token.row, token.col);
+	      free(curr_token.value);
 	      goto clean_up;
 	    }
 	  if (prev_token.type == BIBTOKEN_TYPE_AT)
 	    {
-	      if (!bibtex_entry_type_check(curr_token.value)) {
+	      enum bibtex_entry_type_t entry_type = bibtex_entry_type_check(curr_token.value);
+	      if (entry_type == -1) {
 		bibtex_error_init(&error, BIBTEX_ERROR_INVALID_ENTRY_TYPE, curr_token.row, curr_token.col);
 		free(curr_token.value);
 		goto clean_up;
@@ -445,10 +449,10 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 		  goto clean_up;
 		}
 	      if (head_entry == NULL) {
-		head_entry = bibtex_entry_init(BIBTEX_ENTRY_TYPE_ARTICLE, NULL);
+		head_entry = bibtex_entry_init(entry_type, NULL);
 		entry = head_entry;
 	      } else {
-		entry->next = bibtex_entry_init(BIBTEX_ENTRY_TYPE_ARTICLE, NULL);
+		entry->next = bibtex_entry_init(entry_type, NULL);
 		entry = entry->next;
 	      }
 	      head_field = NULL;
@@ -460,7 +464,8 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	    }
 	  else if (prev_token.type == BIBTOKEN_TYPE_COMMA)
 	    {
-	      if (!bibtex_field_type_check(curr_token.value)) {
+	      enum bibtex_field_type_t field_type = bibtex_field_type_check(curr_token.value);
+	      if (field_type == -1) {
 		bibtex_error_init(&error, BIBTEX_ERROR_INVALID_FIELD_TYPE, curr_token.row, curr_token.col);
 		free(curr_token.value);
 	        goto clean_up;
@@ -472,11 +477,11 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 		  goto clean_up;
 		}
 	      if (head_field == NULL) {
-		head_field = bibtex_field_init(BIBTEX_FIELD_TYPE_ANNOTE, NULL);
+		head_field = bibtex_field_init(field_type, NULL);
 		field = head_field;
 		entry->fields = field;
 	      } else {
-		field->next = bibtex_field_init(BIBTEX_FIELD_TYPE_ANNOTE, NULL);
+		field->next = bibtex_field_init(field_type, NULL);
 		field = head_field->next;
 	      }
 	      free(curr_token.value);
@@ -658,6 +663,103 @@ const char* bibtex_strerror(enum bibtex_error_type_t type)
     }
 }
 
+const char* bibtex_entry_type_to_string(enum bibtex_entry_type_t type)
+{
+  switch(type)
+    {
+    case BIBTEX_ENTRY_TYPE_ARTICLE:
+      return "article";
+    case BIBTEX_ENTRY_TYPE_BOOK:
+      return "book";
+    case BIBTEX_ENTRY_TYPE_BOOKLET:
+      return "booklet";
+    case BIBTEX_ENTRY_TYPE_CONFERENCE:
+      return "conference";
+    case BIBTEX_ENTRY_TYPE_INBOOK:
+      return "inbook";
+    case BIBTEX_ENTRY_TYPE_INCOLLECTION:
+      return "incollection";
+    case BIBTEX_ENTRY_TYPE_INPROCEEDINGS:
+      return "inproceedings";
+    case BIBTEX_ENTRY_TYPE_MANUAL:
+      return "manual";
+    case BIBTEX_ENTRY_TYPE_MASTERSTHESIS:
+      return "mastersthesis";
+    case BIBTEX_ENTRY_TYPE_MISC:
+      return "misc";
+    case BIBTEX_ENTRY_TYPE_PHDTHESIS:
+      return "phdthesis";
+    case BIBTEX_ENTRY_TYPE_PROCEEDINGS:
+      return "proceedings";
+    case BIBTEX_ENTRY_TYPE_TECHREPORT:
+      return "techreport";
+    case BIBTEX_ENTRY_TYPE_UNPUBLISHED:
+      return "unpublished";
+    default:
+      return "Unknown entry";
+    }
+}
+
+const char* bibtex_field_type_to_string(enum bibtex_field_type_t type)
+{
+  switch(type)
+    {
+    case BIBTEX_FIELD_TYPE_ADDRESS:
+      return "address";
+    case BIBTEX_FIELD_TYPE_ANNOTE:
+      return "annote";
+    case BIBTEX_FIELD_TYPE_AUTHOR:
+      return "author";
+    case BIBTEX_FIELD_TYPE_BOOKTITLE:
+      return "booktitle";
+    case BIBTEX_FIELD_TYPE_CHAPTER:
+      return "chapter";
+    case BIBTEX_FIELD_TYPE_DOI:
+      return "doi";
+    case BIBTEX_FIELD_TYPE_EDITION:
+      return "edition";
+    case BIBTEX_FIELD_TYPE_EDITOR:
+      return "editor";
+    case BIBTEX_FIELD_TYPE_HOWPUBLISHED:
+      return "howpublished";
+    case BIBTEX_FIELD_TYPE_INSTITUTION:
+      return "institution";
+    case BIBTEX_FIELD_TYPE_ISSN:
+      return "issn";
+    case BIBTEX_FIELD_TYPE_ISBN:
+      return "isbn";
+    case BIBTEX_FIELD_TYPE_JOURNAL:
+      return "journal";
+    case BIBTEX_FIELD_TYPE_MONTH:
+      return "month";
+    case BIBTEX_FIELD_TYPE_NOTE:
+      return "note";
+    case BIBTEX_FIELD_TYPE_NUMBER:
+      return "number";
+    case BIBTEX_FIELD_TYPE_ORGANIZATION:
+      return "organization";
+    case BIBTEX_FIELD_TYPE_PAGES:
+      return "pages";
+    case BIBTEX_FIELD_TYPE_PUBLISHER:
+      return "publisher";
+    case BIBTEX_FIELD_TYPE_SCHOOL:
+      return "school";
+    case BIBTEX_FIELD_TYPE_TYPE:
+      return "type";
+    case BIBTEX_FIELD_TYPE_SERIES:
+      return "series";
+    case BIBTEX_FIELD_TYPE_TITLE:
+      return "title";
+    case BIBTEX_FIELD_TYPE_URL:
+      return "url";
+    case BIBTEX_FIELD_TYPE_VOLUME:
+      return "volume";
+    case BIBTEX_FIELD_TYPE_YEAR:
+      return "year";
+    default:
+      return "Unknown field";
+    }
+}
 
 #endif // BIBTEX_IMPLEMENTATION
 
