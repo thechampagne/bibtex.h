@@ -9,22 +9,23 @@
 typedef enum bibtex_error_type_t
 {
   BIBTEX_OK                        = 0,
-  BIBTEX_ERROR_UNTERMINATED_STRING = 1,
-  BIBTEX_ERROR_UNEXPECTED_END      = 1 << 1,
-  BIBTEX_ERROR_INVALID_TOKEN       = 1 << 2,
+  BIBTEX_ERROR_EMPTY_INPUT         = 1,
+  BIBTEX_ERROR_UNTERMINATED_STRING = 1 << 1,
+  BIBTEX_ERROR_UNEXPECTED_END      = 1 << 2,
+  BIBTEX_ERROR_INVALID_TOKEN       = 1 << 3,
 
-  BIBTEX_ERROR_EXPECT_ID           = 1 << 3, // TODO: rename it
-  BIBTEX_ERROR_EXPECT_AT           = 1 << 4,
-  BIBTEX_ERROR_EXPECT_LBRACE       = 1 << 5,
-  BIBTEX_ERROR_EXPECT_RBRACE       = 1 << 6,
-  BIBTEX_ERROR_EXPECT_EQ           = 1 << 7,
-  BIBTEX_ERROR_EXPECT_COMMA        = 1 << 8,
-  BIBTEX_ERROR_EXPECT_STRING       = 1 << 9,
-  BIBTEX_ERROR_EXPECT_NUMBER       = 1 << 10,
+  BIBTEX_ERROR_EXPECT_ID           = 1 << 4, // TODO: rename it
+  BIBTEX_ERROR_EXPECT_AT           = 1 << 5,
+  BIBTEX_ERROR_EXPECT_LBRACE       = 1 << 6,
+  BIBTEX_ERROR_EXPECT_RBRACE       = 1 << 7,
+  BIBTEX_ERROR_EXPECT_EQ           = 1 << 8,
+  BIBTEX_ERROR_EXPECT_COMMA        = 1 << 9,
+  BIBTEX_ERROR_EXPECT_STRING       = 1 << 10,
+  BIBTEX_ERROR_EXPECT_NUMBER       = 1 << 11,
 
-  BIBTEX_ERROR_INVALID_ENTRY_TYPE  = 1 << 11,
-  BIBTEX_ERROR_INVALID_FIELD_TYPE  = 1 << 12,
-  BIBTEX_ERROR_DUPLICATE_CITEKEY   = 1 << 13,
+  BIBTEX_ERROR_INVALID_ENTRY_TYPE  = 1 << 12,
+  BIBTEX_ERROR_INVALID_FIELD_TYPE  = 1 << 13,
+  BIBTEX_ERROR_DUPLICATE_CITEKEY   = 1 << 14,
 } bibtex_error_type_t;
 
 typedef enum bibtex_entry_type_t
@@ -433,6 +434,14 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
   struct bibtex_key_t* keys = NULL;
   struct bibtoken_t token = biblexer_next_token(&lex);
   struct bibtoken_t prev_token = token;
+  if (token.type != BIBTOKEN_TYPE_AT)
+    {
+      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_AT,token.row, token.col);
+    }
+  if (token.type == BIBTOKEN_TYPE_EOF)
+    {
+      bibtex_error_init(&error, BIBTEX_ERROR_EMPTY_INPUT,token.row, token.col);
+    }
   while(token.type != BIBTOKEN_TYPE_EOF && token.type != BIBTOKEN_TYPE_ERROR && error.type == BIBTEX_OK)
     {
       
@@ -701,6 +710,8 @@ const char* bibtex_strerror(enum bibtex_error_type_t type)
       return "Invalid field type";
     case BIBTEX_ERROR_DUPLICATE_CITEKEY:
       return "Duplicate citekey";
+    case BIBTEX_ERROR_EMPTY_INPUT:
+      return "Empty input";
     default:
       break;
     }
