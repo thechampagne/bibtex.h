@@ -579,7 +579,7 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 		    goto clean_up;
 		  }
 		field->next = bibtex_field_init(field_type, NULL);
-		field = head_field->next;
+		field = field->next;
 		fields->next = malloc(sizeof(struct bibtex_field_id_t));
 		fields = fields->next;
 	        fields->type = field_type;
@@ -656,11 +656,13 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  if (token.type == BIBTOKEN_TYPE_EOF)
 	    {
 	      bibtex_error_init(&error, BIBTEX_ERROR_UNEXPECTED_END,token.row, token.col);
+	      free(prev_token.value);
 	      goto clean_up;
 	    }
 	  if (token.type != BIBTOKEN_TYPE_COMMA && token.type != BIBTOKEN_TYPE_RBRACE)
 	    {
 	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_COMMA | BIBTEX_ERROR_EXPECT_RBRACE, token.row, token.col);
+	      free(prev_token.value);
 	      goto clean_up;
 	    }
 	  field->value = prev_token.value;
@@ -672,11 +674,13 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	  if (token.type == BIBTOKEN_TYPE_EOF)
 	    {
 	      bibtex_error_init(&error, BIBTEX_ERROR_UNEXPECTED_END,token.row, token.col);
+	      free(prev_token.value);
 	      goto clean_up;
 	    }
 	  if (token.type != BIBTOKEN_TYPE_COMMA && token.type != BIBTOKEN_TYPE_RBRACE)
 	    {
 	      bibtex_error_init(&error, BIBTEX_ERROR_EXPECT_COMMA | BIBTEX_ERROR_EXPECT_RBRACE, token.row, token.col);
+	      free(prev_token.value);
 	      goto clean_up;
 	    }
 	  field->value = prev_token.value;
@@ -688,6 +692,8 @@ struct bibtex_error_t bibtex_parse(struct bibtex_entry_t** root, const char* inp
 	case BIBTOKEN_TYPE_ERROR: break;
 	}
     }
+  bibtex_field_id_free(head_fields);
+  bibtex_key_free(head_keys);
   *root = head_entry;
   return error;
  clean_up:
